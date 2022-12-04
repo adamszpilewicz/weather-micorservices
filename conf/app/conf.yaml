@@ -1,0 +1,22 @@
+RABBIT_ADDRESS: amqp://guest:guest@localhost:5672/
+POSTGRES_ADDRESS: postgres://postgres:postgres@127.0.0.1:5432
+ES_ADDRESS: http://localhost:9200
+STORAGE_TYPE: postgres
+QUEUE_NAME: golang-queue-2
+WEATHER_URL: https://api.openweathermap.org/data/2.5/weather?lat=%f&lon=%f&units=metric&appid=35e1bf66337c93e79b86b747922086d5
+API_KEY: 35e1bf66337c93e79b86b747922086d5
+LON:
+  WARSAW:
+    21.036828
+  TEL_AVIV:
+    34.783951
+  YEREVAN:
+    44.502750
+LAT:
+  WARSAW:
+    52.253438
+  TEL_AVIV:
+    32.076045
+  YEREVAN:
+    40.173970
+

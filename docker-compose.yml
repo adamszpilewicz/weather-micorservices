@@ -1,0 +1,82 @@
+version: "3.2"
+services:
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: 'rabbitmq'
+    ports:
+      - 5672:5672
+      - 15672:15672
+    volumes:
+      - ./conf/rabbitmq/data/:/var/lib/rabbitmq/
+      - ./conf/rabbitmq/log/:/var/log/rabbitmq
+    networks:
+      - rabbitmq_go_net_2
+
+  db:
+    image: postgres:12-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    ports:
+      - '5432:5432'
+    volumes:
+      - ./db/postgres/volume:/var/lib/postgresql/data
+    networks:
+      - rabbitmq_go_net_2
+
+  grafana:
+    image: grafana/grafana:8.2.3-ubuntu
+    container_name: grafana
+    links:
+      - db
+    ports:
+      - 30000:3000
+    volumes:
+      - ./grafana-data:/var/lib/grafana
+    networks:
+      - rabbitmq_go_net_2
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.14.0
+    container_name: elasticsearch
+    environment:
+      - bootstrap.memory_lock=true
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+      - discovery.type=single-node
+      - node.name=lonely-gopher
+      - cluster.name=es4gophers
+    ulimits:
+      memlock:
+        hard: -1
+        soft: -1
+    ports:
+      - 9200:9200
+    networks:
+      - rabbitmq_go_net_2
+    healthcheck:
+      interval: 10s
+      retries: 20
+      test: curl -s http://localhost:9200/_cluster/health | grep -vq '"status":"red"'
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.14.0
+    container_name: kibana
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    ports:
+      - 5601:5601
+    networks:
+      - rabbitmq_go_net_2
+    healthcheck:
+      interval: 10s
+      retries: 20
+      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:5601/api/status
+
+networks:
+  rabbitmq_go_net_2:
+    driver: bridge
